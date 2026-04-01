@@ -57,6 +57,7 @@ const Index = () => {
         nama_barang: barang.nama_barang,
         berat: barang.berat,
         harga_gram: barang.harga_gram,
+        harga_jual: barang.harga_jual,
       });
 
       // 2. Fetch potongan kondisi

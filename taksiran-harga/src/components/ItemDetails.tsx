@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Weight, Gem, Hash, Coins } from "lucide-react";
+import { ArrowRight, Weight, Gem, Hash, Coins, Wallet } from "lucide-react";
 import type { GoldItem } from "@/types/appraisal";
 
 interface ItemDetailsProps {
@@ -9,12 +9,12 @@ interface ItemDetailsProps {
   onNext: () => void;
 }
 
-const ItemDetails = ({ item, minPrice, maxPrice, onNext }: ItemDetailsProps) => {
+const ItemDetails = ({ item, minPrice: _minPrice, maxPrice: _maxPrice, onNext }: ItemDetailsProps) => {
   const details = [
     { icon: Hash, label: "Kode Barcode", value: item.barcode },
     { icon: Gem, label: "Nama Barang", value: item.nama_barang },
     { icon: Weight, label: "Berat", value: `${item.berat} gram` },
-    { icon: Coins, label: "Harga Beli Customer/gr", value: item.harga_gram ? `Rp ${item.harga_gram.toLocaleString()}` : "-" },
+    { icon: Wallet, label: "Harga Beli Customer", value: item.harga_jual ? `Rp ${item.harga_jual.toLocaleString()}` : "-" },
   ];
 
   return (
@@ -41,18 +41,6 @@ const ItemDetails = ({ item, minPrice, maxPrice, onNext }: ItemDetailsProps) => 
         ))}
       </div>
 
-      {typeof minPrice === "number" && typeof maxPrice === "number" && (
-        <div className="w-full p-4 rounded-xl bg-surface-elevated flex flex-col gap-2 mt-2">
-          <div className="flex justify-between text-sm">
-            <span className="font-semibold">Harga Minimal</span>
-            <span className="font-mono">Rp {minPrice.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="font-semibold">Harga Maksimal</span>
-            <span className="font-mono">Rp {maxPrice.toLocaleString()}</span>
-          </div>
-        </div>
-      )}
       <Button
         variant="gold"
         size="lg"

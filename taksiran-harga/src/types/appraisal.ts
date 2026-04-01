@@ -11,7 +11,7 @@ export interface GoldItem {
   nama_barang: string;
   berat: number; // gram
   harga_gram?: number; // harga beli customer per gram
-}
+  harga_jual?: number; // harga beli customer total
 }
 
 export interface QuestionnaireItem {
