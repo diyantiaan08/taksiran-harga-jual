@@ -11,6 +11,7 @@ interface BranchScannerProps {
 }
 
 const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
+  const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
   const [selectedId, setSelectedId] = useState("");
   const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState("");
@@ -21,16 +22,17 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
     const fetchBranches = async () => {
       setLoading(true);
       try {
-        // Untuk development gunakan endpoint lokal agar tidak CORS error
-        const res = await fetch("http://localhost:3000/stores");
+        // Gunakan host dari environment agar bisa diakses lintas perangkat
+        const res = await fetch(`${apiBaseUrl}/stores`);
         const data = await res.json();
         setBranches(
           Array.isArray(data.stores)
-            ? data.stores.map((s, idx) => ({
+            ? data.stores.map((s: any) => ({
                 id: s.kode_toko,
                 name: s.kode_toko,
-                address: s.domain,
-                phone: "",
+                address: s.alamat || "",
+                phone: s.telepon || "",
+                domain: s.domain,
               }))
             : []
         );
@@ -62,12 +64,13 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
 
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-sm mx-auto animate-in fade-in duration-500">
-      <div className="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center">
-        <QrCode className="w-10 h-10 text-primary-foreground" />
-      </div>
-
-      <div className="text-center space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Identifikasi Cabang</h2>
+      <div className="w-full space-y-2 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center">
+            <QrCode className="w-7 h-7 text-primary-foreground" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">Identifikasi Cabang</h2>
+        </div>
         <p className="text-sm text-muted-foreground">
           Scan QR Code pada nota, pilih cabang, atau masukkan kode manual
         </p>
@@ -85,7 +88,9 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
               {branches.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
                   <span className="font-medium">{b.name}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">— {b.address}</span>
+                  {b.address && (
+                    <span className="text-muted-foreground ml-2 text-xs">— {b.address}</span>
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -123,7 +128,7 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
           />
           <Button
             type="submit"
-            variant="outline"
+            variant="goldSoft"
             size="lg"
             className="w-full h-12 rounded-xl"
             disabled={!manualCode.trim()}

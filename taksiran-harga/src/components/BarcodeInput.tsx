@@ -16,13 +16,14 @@ const BarcodeInput = ({ onSubmit }: BarcodeInputProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-sm mx-auto animate-in fade-in duration-500">
-      <div className="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center">
-        <ScanBarcode className="w-10 h-10 text-primary-foreground" />
-      </div>
-
-      <div className="text-center space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Masukkan Kode Nota</h2>
+    <div className="flex flex-col items-center gap-8 w-full max-w-full sm:max-w-sm mx-auto animate-in fade-in duration-500">
+      <div className="w-full space-y-2 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center">
+            <ScanBarcode className="w-7 h-7 text-primary-foreground" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">Masukkan Kode Nota</h2>
+        </div>
         <p className="text-sm text-muted-foreground">
           Masukkan kode barcode yang tertera pada nota pembelian Anda
         </p>
@@ -47,9 +48,6 @@ const BarcodeInput = ({ onSubmit }: BarcodeInputProps) => {
         </Button>
       </form>
 
-      <p className="text-xs text-muted-foreground text-center">
-        Kode demo: GLD-001, GLD-002, GLD-003
-      </p>
     </div>
   );
 };

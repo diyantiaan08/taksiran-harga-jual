@@ -1,8 +1,9 @@
 export interface BranchInfo {
   id: string;
   name: string;
-  address: string;
-  phone: string;
+  address?: string;
+  phone?: string;
+  domain?: string;
 }
 
 export interface GoldItem {

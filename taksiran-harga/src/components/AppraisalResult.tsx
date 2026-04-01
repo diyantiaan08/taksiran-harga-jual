@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, TrendingUp, TrendingDown, Coins } from "lucide-react";
 import type { AppraisalResult as AppraisalResultType } from "@/types/appraisal";
@@ -11,6 +12,7 @@ const formatRupiah = (num: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
 
 const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
+  const [animatedScore, setAnimatedScore] = useState(0);
   const conditionLabel =
     result.conditionScore >= 80
       ? "Sangat Baik"
@@ -19,6 +21,25 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
       : result.conditionScore >= 40
       ? "Cukup"
       : "Kurang";
+
+  useEffect(() => {
+    setAnimatedScore(0);
+    const duration = 900;
+    const start = performance.now();
+    let frameId: number;
+
+    const animate = (time: number) => {
+      const progress = Math.min((time - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedScore(Math.round(result.conditionScore * eased));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [result.conditionScore]);
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-sm mx-auto animate-in fade-in duration-500">
@@ -38,11 +59,11 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
               stroke="hsl(var(--primary))"
               strokeWidth="8"
               strokeLinecap="round"
-              strokeDasharray={`${(result.conditionScore / 100) * 264} 264`}
+              strokeDasharray={`${(animatedScore / 100) * 264} 264`}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-2xl font-bold text-foreground">{result.conditionScore}</span>
+            <span className="text-2xl font-bold text-foreground">{animatedScore}</span>
           </div>
         </div>
         <p className="text-sm font-semibold gold-text">{conditionLabel}</p>
