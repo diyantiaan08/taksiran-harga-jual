@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, XCircle, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuestionnaireItem, QuestionnaireAnswer } from "@/types/appraisal";
 
@@ -11,6 +11,7 @@ interface QuestionnaireProps {
 
 const Questionnaire = ({ questions, onSubmit }: QuestionnaireProps) => {
   const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const setAnswer = (id: string, value: string | boolean) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
@@ -23,13 +24,19 @@ const Questionnaire = ({ questions, onSubmit }: QuestionnaireProps) => {
       questionId: q.id,
       answer: answers[q.id],
     }));
-    onSubmit(result);
+    setIsSubmitting(true);
+    setTimeout(() => onSubmit(result), 250);
   };
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-sm mx-auto animate-in fade-in duration-500">
       <div className="text-center space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Kondisi Barang</h2>
+        <div className="flex items-center justify-center gap-2 text-foreground">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_8px_18px_-12px_rgba(217,119,6,0.7)]">
+            <ClipboardList className="h-5 w-5" />
+          </span>
+          <h2 className="text-xl font-bold text-foreground">Kondisi Barang</h2>
+        </div>
         <p className="text-sm text-muted-foreground">
           Jawab pertanyaan berikut untuk mendapatkan taksiran yang akurat
         </p>
@@ -37,7 +44,10 @@ const Questionnaire = ({ questions, onSubmit }: QuestionnaireProps) => {
 
       <div className="space-y-4">
         {questions.map((q, idx) => (
-          <div key={q.id} className="p-4 rounded-xl surface-elevated space-y-3">
+          <div
+            key={q.id}
+            className="p-4 rounded-2xl border border-white/70 bg-white/85 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] ring-1 ring-black/5 space-y-3"
+          >
             <p className="text-sm font-medium text-foreground">
               <span className="text-muted-foreground mr-1.5">{idx + 1}.</span>
               {q.question}
@@ -90,11 +100,20 @@ const Questionnaire = ({ questions, onSubmit }: QuestionnaireProps) => {
         variant="gold"
         size="lg"
         className="w-full h-12 rounded-xl"
-        disabled={!allAnswered}
+        disabled={!allAnswered || isSubmitting}
         onClick={handleSubmit}
       >
-        Lihat Taksiran
-        <ArrowRight className="w-4 h-4 ml-1" />
+        {isSubmitting ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            Memuat
+          </span>
+        ) : (
+          <>
+            Lihat Taksiran
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </>
+        )}
       </Button>
     </div>
   );

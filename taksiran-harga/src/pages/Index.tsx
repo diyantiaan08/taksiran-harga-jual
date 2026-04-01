@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, ArrowLeft } from "lucide-react";
+import { MapPin, ArrowLeft, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StepIndicator from "@/components/StepIndicator";
 import BranchScanner from "@/components/BranchScanner";
@@ -25,6 +25,7 @@ const Index = () => {
   // Token pusat, bisa akses semua domain
   const TOKEN_PUSAT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiUFVTQVQiLCJsZXZlbCI6IlNVIiwiaWF0IjoxNjQyNDAyMDg4fQ.TWq2eBf_HAtwYzeomz8KA7PJM0151iafJsJjQmz2Zxs";
   const [result, setResult] = useState<AppraisalResult | null>(null);
+  const [isFetchingBarcode, setIsFetchingBarcode] = useState(false);
   const [error, setError] = useState("");
 
   const handleBranchFound = (b: BranchInfo) => {
@@ -37,6 +38,7 @@ const Index = () => {
     setItem(null);
     setMinPrice(null);
     setMaxPrice(null);
+    setIsFetchingBarcode(true);
     try {
       // 1. Fetch barang by barcode
       const res = await fetch(
@@ -97,6 +99,8 @@ const Index = () => {
       setStep(3);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat mengambil data");
+    } finally {
+      setIsFetchingBarcode(false);
     }
   };
 
@@ -151,105 +155,116 @@ const Index = () => {
           />
         </aside>
 
-        <div className="flex min-h-screen flex-1 flex-col bg-gradient-to-b from-[#f8f9ff] via-[#f2f6ff] to-[#e9f0ff] text-slate-800 lg:h-screen lg:min-h-0 lg:overflow-y-auto">
-          {/* Header — only shown after branch selected */}
-          {branch && (
-            <header className="w-full border-b border-white/60 bg-white/70 backdrop-blur animate-in slide-in-from-top duration-300">
-                <div className="mx-auto flex max-w-lg flex-col items-center gap-2 px-4 py-4 text-center">
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    <img
-                      src="/icon-diamond.png"
-                      alt="Ikon emas"
-                      className="h-10 w-10 rounded-lg border border-white/60 object-cover shadow-md shadow-black/10"
-                      loading="lazy"
-                    />
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-lg font-semibold uppercase text-slate-900">
-                      <span>TAKSIRAN HARGA JUAL EMAS</span>
-                      {branch.name && (
-                        <span className="whitespace-nowrap tracking-normal text-primary">
-                          - {branch.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {branch.address && (
-                    <div className="mt-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{branch.address}</span>
-                    </div>
-                  )}
-              </div>
-            </header>
-          )}
-
-          {/* Global Step Header */}
-          {!branch && (
-            <div className="mx-auto w-full max-w-lg px-4 pt-4">
-              <div className="flex flex-wrap items-center justify-center gap-3 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-md shadow-black/10">
-                  <img src="/icon-diamond.png" alt="Ikon emas" className="h-8 w-8 object-contain" />
-                </div>
-                <h2 className="text-lg font-semibold uppercase tracking-wide text-slate-900">
-                  TAKSIRAN HARGA JUAL EMAS
-                </h2>
-              </div>
-            </div>
-          )}
-
-          {/* Step Indicator + Back */}
-          <div className="mx-auto w-full max-w-lg space-y-3 px-4 py-5">
-            {step > 1 && step < 5 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-2 text-slate-600 hover:text-slate-800"
-                onClick={() => setStep(step - 1)}
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                Kembali
-              </Button>
-            )}
-            <div className="rounded-3xl bg-white/85 p-4 shadow-lg shadow-indigo-100 ring-1 ring-white/70">
-              <StepIndicator currentStep={step} totalSteps={5} labels={STEP_LABELS} />
-            </div>
+        <div className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-[#fbfcff] via-[#f2f7ff] to-[#e8efff] text-slate-800 lg:h-screen lg:min-h-0 lg:overflow-y-auto">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-32 -right-28 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_top,_rgba(250,232,180,0.9),_rgba(250,232,180,0))] blur-3xl" />
+            <div className="absolute bottom-[-140px] left-[-80px] h-96 w-96 rounded-full bg-[radial-gradient(circle_at_top,_rgba(191,219,254,0.9),_rgba(191,219,254,0))] blur-3xl" />
+            <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.5),rgba(255,255,255,0)_45%,rgba(255,255,255,0.35))] opacity-70" />
           </div>
-
-          {/* Content */}
-          <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-8">
-            <div className="rounded-3xl bg-white/90 p-6 shadow-2xl shadow-indigo-100 ring-1 ring-white/70 backdrop-blur-sm">
-              {step === 1 && <BranchScanner onBranchFound={handleBranchFound} />}
-              {step === 2 && (
-                <div className="space-y-4">
-                  <BarcodeInput onSubmit={handleBarcode} />
-                  {error && (
-                    <p className="animate-in fade-in text-center text-sm text-destructive">{error}</p>
+          <div className="flex min-h-screen flex-1 flex-col">
+            {/* Header — only shown after branch selected */}
+            {branch && (
+              <header className="w-full border-b border-white/60 bg-white/75 backdrop-blur animate-in slide-in-from-top duration-300">
+                <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_8px_20px_-12px_rgba(217,119,6,0.8)]">
+                    <Store className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h1 className="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                      Taksiran Harga Emas
+                    </h1>
+                  <p className="text-xs text-muted-foreground">
+                    Proses penaksiran harga jual emas
+                  </p>
+                  </div>
+                </div>
+                <div className="hidden max-w-xs flex-col items-end gap-1 text-right sm:flex">
+                  <div className="text-sm font-semibold text-primary">{branch.name}</div>
+                  {branch.address && (
+                    <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span className="line-clamp-2">{branch.address}</span>
+                    </div>
+                  )}
+                  {branch.phone && (
+                    <span className="text-xs text-muted-foreground">{branch.phone}</span>
                   )}
                 </div>
-              )}
-              {step === 3 && item && (
-                <ItemDetails
-                  item={item}
-                  minPrice={minPrice}
-                  maxPrice={maxPrice}
-                  onNext={() => setStep(4)}
-                />
-              )}
-              {step === 4 && <Questionnaire questions={QUESTIONNAIRE} onSubmit={handleQuestionnaire} />}
-              {step === 5 && result && <AppraisalResultView result={result} onReset={handleReset} />}
-            </div>
-          </main>
+                </div>
+              </header>
+            )}
 
-          {/* Footer */}
-          <footer className="border-t border-white/60 bg-[#eef2ff] py-4 backdrop-blur">
-            <div className="mx-auto flex max-w-lg flex-col items-center gap-1 px-4 text-center text-xs text-slate-700">
-              <span>© 2026 Nagatech Sistem Integrator</span>
-              {branch?.phone && (
-                <a href={`tel:${branch.phone}`} className="transition-colors hover:text-primary">
-                  {branch.phone}
-                </a>
+            {/* Global Step Header */}
+            {!branch && (
+              <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-2 px-4 pt-4 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_8px_20px_-12px_rgba(217,119,6,0.8)]">
+                  <Store className="h-6 w-6" />
+                </div>
+                <h1 className="text-2xl font-bold text-slate-900">Taksiran Harga Emas</h1>
+                <p className="text-sm text-muted-foreground">
+                  Pilih cabang toko emas Anda untuk melanjutkan
+                </p>
+              </div>
+            )}
+
+            {/* Step Indicator + Back */}
+            <div className="mx-auto w-full max-w-lg space-y-3 px-4 py-5">
+              {step > 1 && step < 5 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="-ml-2 text-slate-600 hover:text-slate-800"
+                  onClick={() => setStep(step - 1)}
+                >
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  Kembali
+                </Button>
               )}
+              <div className="rounded-3xl bg-white/85 p-4 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.6)] ring-1 ring-white/70 backdrop-blur-sm">
+                <StepIndicator currentStep={step} totalSteps={5} labels={STEP_LABELS} />
+              </div>
             </div>
-          </footer>
+
+            {/* Content */}
+            <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pb-8">
+              <div className="w-full rounded-[30px] bg-gradient-to-br from-white via-white/70 to-amber-100/60 p-[1px] shadow-[0_40px_90px_-60px_rgba(15,23,42,0.7)]">
+                <div className="rounded-[28px] border border-white/70 bg-white/90 p-6 ring-1 ring-white/60 backdrop-blur-md">
+                {step === 1 && <BranchScanner onBranchFound={handleBranchFound} />}
+                {step === 2 && (
+                  <div className="space-y-4">
+                    <BarcodeInput onSubmit={handleBarcode} loading={isFetchingBarcode} />
+                    {error && (
+                      <p className="animate-in fade-in text-center text-sm text-destructive">{error}</p>
+                    )}
+                  </div>
+                )}
+                {step === 3 && item && (
+                  <ItemDetails
+                    item={item}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    onNext={() => setStep(4)}
+                  />
+                )}
+                {step === 4 && <Questionnaire questions={QUESTIONNAIRE} onSubmit={handleQuestionnaire} />}
+                {step === 5 && result && <AppraisalResultView result={result} onReset={handleReset} />}
+                </div>
+              </div>
+            </main>
+
+            {/* Footer */}
+            <footer className="mt-auto border-t border-white/60 bg-gradient-to-b from-[#f3f6ff] to-[#e9efff] py-4 backdrop-blur">
+              <div className="mx-auto flex max-w-lg flex-col items-center gap-1 px-4 text-center text-xs text-slate-700">
+                <span>© 2026 Nagatech Sistem Integrator</span>
+                {branch?.phone && (
+                  <a href={`tel:${branch.phone}`} className="transition-colors hover:text-primary">
+                    {branch.phone}
+                  </a>
+                )}
+              </div>
+            </footer>
+          </div>
         </div>
       </div>
     </div>

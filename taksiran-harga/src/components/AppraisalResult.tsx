@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, TrendingUp, TrendingDown, Coins } from "lucide-react";
+import { RotateCcw, TrendingUp, TrendingDown, Coins, BarChart3 } from "lucide-react";
 import type { AppraisalResult as AppraisalResultType } from "@/types/appraisal";
 
 interface AppraisalResultProps {
@@ -44,12 +44,19 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-sm mx-auto animate-in fade-in duration-500">
       <div className="text-center space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Taksiran Harga</h2>
-        <p className="text-sm text-muted-foreground">{result.item.description}</p>
+        <div className="flex items-center justify-center gap-2 text-foreground">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_8px_18px_-12px_rgba(217,119,6,0.7)]">
+            <BarChart3 className="h-5 w-5" />
+          </span>
+          <h2 className="text-2xl font-bold text-foreground">Taksiran Harga</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {result.item.nama_barang} • {result.item.berat}g
+        </p>
       </div>
 
       {/* Condition Score */}
-      <div className="w-full p-5 rounded-2xl surface-elevated text-center space-y-3">
+      <div className="w-full rounded-3xl border border-amber-100/80 bg-gradient-to-br from-amber-50/80 via-white to-white p-5 text-center shadow-[0_22px_50px_-38px_rgba(15,23,42,0.5)] space-y-3">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Skor Kondisi</p>
         <div className="relative w-24 h-24 mx-auto">
           <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
@@ -66,14 +73,14 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
             <span className="text-2xl font-bold text-foreground">{animatedScore}</span>
           </div>
         </div>
-        <p className="text-sm font-semibold gold-text">{conditionLabel}</p>
+        <p className="text-sm font-semibold text-amber-700">{conditionLabel}</p>
       </div>
 
       {/* Price Range */}
       <div className="w-full space-y-3">
-        <div className="flex items-center gap-4 p-4 rounded-xl surface-elevated">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <TrendingDown className="w-5 h-5 text-primary" />
+        <div className="flex items-center gap-4 rounded-2xl border border-sky-100/80 bg-gradient-to-br from-sky-50/80 via-white to-white p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
+          <div className="w-11 h-11 rounded-2xl bg-white/90 ring-1 ring-black/5 shadow-sm flex items-center justify-center shrink-0">
+            <TrendingDown className="w-5 h-5 text-sky-600" />
           </div>
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">Harga Minimum</p>
@@ -81,19 +88,19 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 p-4 rounded-xl gold-gradient">
-          <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#f7c463] via-[#f4b34f] to-[#e9a93a] p-4 shadow-[0_20px_44px_-26px_rgba(217,119,6,0.6)]">
+          <div className="w-11 h-11 rounded-2xl bg-white/25 ring-1 ring-white/40 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-xs text-primary-foreground/70">Harga Maksimum</p>
-            <p className="font-bold text-primary-foreground text-lg">{formatRupiah(result.maxPrice)}</p>
+            <p className="text-xs text-white/70">Harga Maksimum</p>
+            <p className="font-bold text-white text-lg">{formatRupiah(result.maxPrice)}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 p-4 rounded-xl surface-elevated">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Coins className="w-5 h-5 text-primary" />
+        <div className="flex items-center gap-4 rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/80 via-white to-white p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
+          <div className="w-11 h-11 rounded-2xl bg-white/90 ring-1 ring-black/5 shadow-sm flex items-center justify-center shrink-0">
+            <Coins className="w-5 h-5 text-emerald-600" />
           </div>
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">Harga Beli Customer/gr</p>
@@ -106,14 +113,14 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground text-center leading-relaxed">
+      <div className="w-full rounded-2xl border border-amber-100/70 bg-amber-50/70 p-4 text-center text-xs text-amber-900/80 leading-relaxed">
         * Taksiran ini bersifat estimasi. Harga final ditentukan setelah verifikasi langsung di toko.
-      </p>
+      </div>
 
       <Button
-        variant="outline"
+        variant="goldSoft"
         size="lg"
-        className="w-full h-12 rounded-xl"
+        className="w-full h-12 rounded-2xl"
         onClick={onReset}
       >
         <RotateCcw className="w-4 h-4 mr-2" />

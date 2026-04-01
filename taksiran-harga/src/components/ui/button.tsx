@@ -17,7 +17,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         gold: "gold-gradient text-primary-foreground font-semibold shadow-lg hover:opacity-90 transition-opacity",
         goldSoft:
-          "bg-gradient-to-r from-[#fef7e5] to-[#fdecc8] text-amber-900 font-semibold shadow hover:opacity-90 transition-opacity",
+          "bg-gradient-to-r from-[#ffe9c7] via-[#ffd7a1] to-[#f6c58a] text-amber-900 font-semibold shadow-[0_12px_30px_-20px_rgba(217,119,6,0.6)] hover:brightness-105 transition",
       },
       size: {
         default: "h-10 px-4 py-2",
