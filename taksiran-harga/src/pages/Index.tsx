@@ -22,8 +22,8 @@ const Index = () => {
   const [item, setItem] = useState<GoldItem | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  // Token pusat, bisa akses semua domain
-  const TOKEN_PUSAT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiUFVTQVQiLCJsZXZlbCI6IlNVIiwiaWF0IjoxNjQyNDAyMDg4fQ.TWq2eBf_HAtwYzeomz8KA7PJM0151iafJsJjQmz2Zxs";
+  // Token pusat (dari env)
+  const TOKEN_PUSAT = import.meta.env.VITE_TOKEN_PUSAT as string | undefined;
   const [result, setResult] = useState<AppraisalResult | null>(null);
   const [isFetchingBarcode, setIsFetchingBarcode] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +41,7 @@ const Index = () => {
     setIsFetchingBarcode(true);
     try {
       // 1. Fetch barang by barcode
+      if (!TOKEN_PUSAT) throw new Error("Token pusat belum di-set di env (VITE_TOKEN_PUSAT)");
       const res = await fetch(
         `https://italy.goldstore.id/api/v1/pembelian/get/jual/${barcode}`,
         {
