@@ -5,7 +5,7 @@ import { encryptQrPayload } from "@/lib/qr";
 import type { BranchInfo } from "@/types/appraisal";
 import QRCode from "qrcode";
 import { toast } from "@/components/ui/sonner";
-import { PlusCircle, Search, ShieldCheck } from "lucide-react";
+import { PlusCircle, Search, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ const AdminQr = () => {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
+  const [qrUpdateNotice, setQrUpdateNotice] = useState("");
   const [createKode, setCreateKode] = useState("");
   const [createDomain, setCreateDomain] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -43,6 +44,8 @@ const AdminQr = () => {
   const [actionLoading, setActionLoading] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     setBaseUrl(window.location.origin);
@@ -98,6 +101,12 @@ const AdminQr = () => {
       (b.domain || "").toLowerCase().includes(q)
     );
   });
+  const totalPages = Math.max(1, Math.ceil(filteredBranches.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedBranches = filteredBranches.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize
+  );
 
   const normalizeDomain = (value: string) =>
     value.endsWith("/") ? value.slice(0, -1) : value;
@@ -165,6 +174,32 @@ const AdminQr = () => {
         throw new Error(err.message || "Gagal update cabang");
       }
       toast.success("Cabang berhasil diupdate.");
+      const existing = branches.find((b) => b.id === originalId);
+      if (existing?.qr_link) {
+        try {
+          const newLink = await buildQrLink(
+            editKode.trim(),
+            normalizeDomain(editDomain.trim())
+          );
+          const saveRes = await fetch(`${apiBaseUrl}/stores/qr`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              kode_toko: editKode.trim(),
+              qr_link: newLink,
+            }),
+          });
+          if (!saveRes.ok) throw new Error("update_failed");
+          setSaveStatus("QR diperbarui karena data cabang diubah.");
+          setQrUpdateNotice("QR BERUBAH. Silakan Download QR Terbaru.");
+          toast.warning("QR berubah karena data cabang di-edit.");
+        } catch {
+          toast.error("Gagal memperbarui QR setelah edit.");
+        }
+      }
       setEditingId(null);
       await loadBranches();
     } catch (e: any) {
@@ -215,21 +250,24 @@ const AdminQr = () => {
     }
   };
 
-  const handleGenerate = async (branch: BranchInfo) => {
+  const buildQrLink = async (kodeToko: string, domain?: string) => {
     if (!qrSecret) {
-      setAuthError("VITE_QR_SECRET belum di-set.");
-      return;
+      throw new Error("VITE_QR_SECRET belum di-set.");
     }
+    const qrToken = await encryptQrPayload(
+      { kode_toko: kodeToko, domain },
+      qrSecret
+    );
+    const url = new URL(baseUrl);
+    url.searchParams.set("qr", qrToken);
+    return url.toString();
+  };
+
+  const handleGenerate = async (branch: BranchInfo) => {
     setIsGenerating(true);
     setSaveStatus("");
     try {
-      const qrToken = await encryptQrPayload(
-        { kode_toko: branch.id, domain: branch.domain },
-        qrSecret
-      );
-      const url = new URL(baseUrl);
-      url.searchParams.set("qr", qrToken);
-      const link = url.toString();
+      const link = await buildQrLink(branch.id, branch.domain);
       const png = await QRCode.toDataURL(link, { margin: 1, width: 512 });
       setQrLink(link);
       setQrPng(png);
@@ -255,6 +293,26 @@ const AdminQr = () => {
       }
     } catch {
       setAuthError("Gagal generate QR.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadExisting = async (branch: BranchInfo) => {
+    if (!branch.qr_link) {
+      toast.error("QR belum tersedia untuk cabang ini.");
+      return;
+    }
+    setIsGenerating(true);
+    setSaveStatus("");
+    try {
+      const png = await QRCode.toDataURL(branch.qr_link, { margin: 1, width: 512 });
+      setQrLink(branch.qr_link);
+      setQrPng(png);
+      setQrFileName(`qr-${branch.id}.png`);
+      setIsQrOpen(true);
+    } catch {
+      toast.error("Gagal membuat QR untuk diunduh.");
     } finally {
       setIsGenerating(false);
     }
@@ -384,9 +442,19 @@ const AdminQr = () => {
                   />
                 </div>
               </div>
-              <Button onClick={createStore} disabled={actionLoading === "create"} className="h-11 rounded-xl">
-                {actionLoading === "create" ? "Menyimpan..." : "Simpan Data"}
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={createStore} disabled={actionLoading === "create"} className="h-11 rounded-xl">
+                  {actionLoading === "create" ? "Menyimpan..." : "Simpan Data"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl"
+                  onClick={() => setShowAddForm(false)}
+                >
+                  Tutup Form
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -398,7 +466,10 @@ const AdminQr = () => {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Cari nama toko atau domain..."
                 className="h-10 rounded-full pl-9"
               />
@@ -415,7 +486,7 @@ const AdminQr = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredBranches.map((b) => (
+                {pagedBranches.map((b) => (
                   <tr key={b.id} className="border-t hover:bg-amber-50/40">
                     <td className="py-3 px-3">
                       {editingId === b.id ? (
@@ -489,10 +560,17 @@ const AdminQr = () => {
                             </AlertDialog>
                             <Button
                               size="sm"
-                              onClick={() => handleGenerate(b)}
+                              onClick={() =>
+                                b.qr_link ? handleDownloadExisting(b) : handleGenerate(b)
+                              }
                               disabled={isGenerating}
+                              className={
+                                b.qr_link
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                  : undefined
+                              }
                             >
-                              Generate QR
+                              {b.qr_link ? "Download QR" : "Generate QR"}
                             </Button>
                           </>
                         )}
@@ -510,6 +588,60 @@ const AdminQr = () => {
               </tbody>
             </table>
           </div>
+          {filteredBranches.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+              <span>
+                Menampilkan {(safePage - 1) * pageSize + 1}–
+                {Math.min(safePage * pageSize, filteredBranches.length)} dari{" "}
+                {filteredBranches.length} cabang
+              </span>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs text-slate-500">
+                  Tampilkan
+                  <select
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700"
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {[10, 20, 50, 100].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={safePage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-xs font-semibold">
+                  {safePage}/{totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={safePage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          {qrUpdateNotice && (
+            <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 shadow-sm">
+              {qrUpdateNotice}
+            </div>
+          )}
           {authError && <p className="text-sm text-destructive mt-3">{authError}</p>}
           {saveStatus && <p className="text-sm text-emerald-600 mt-2">{saveStatus}</p>}
         </div>
