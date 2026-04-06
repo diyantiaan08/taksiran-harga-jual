@@ -4,6 +4,7 @@ export interface BranchInfo {
   address?: string;
   phone?: string;
   domain?: string;
+  qr_link?: string;
 }
 
 export interface GoldItem {

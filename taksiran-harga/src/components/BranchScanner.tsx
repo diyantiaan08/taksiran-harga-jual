@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QrCode, ArrowRight, Store } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
@@ -17,13 +16,11 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
   const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
   const qrSecret = import.meta.env.VITE_QR_SECRET as string | undefined;
   const [selectedId, setSelectedId] = useState("");
-  const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState("");
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [branchesError, setBranchesError] = useState("");
   const [isProceedingSelect, setIsProceedingSelect] = useState(false);
-  const [isProceedingManual, setIsProceedingManual] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanError, setScanError] = useState("");
   const [hasAutoQrProcessed, setHasAutoQrProcessed] = useState(false);
@@ -70,15 +67,15 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
   };
 
   const refreshBranches = async () => {
-      setLoading(true);
-      try {
-        const list = await fetchBranchesData();
-        setBranches(list);
-      } catch (e) {
-        setBranches([]);
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const list = await fetchBranchesData();
+      setBranches(list);
+    } catch {
+      setBranches([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -317,24 +314,11 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
     setTimeout(() => onBranchFound(branch), 250);
   };
 
-  const handleManual = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = manualCode.trim().toUpperCase();
-    const branch = branches.find((b) => b.id === trimmed);
-    if (!branch) {
-      setError("Kode cabang tidak ditemukan. Silakan coba lagi.");
-      return;
-    }
-    setError("");
-    setIsProceedingManual(true);
-    setTimeout(() => onBranchFound(branch), 250);
-  };
-
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-sm mx-auto animate-in fade-in duration-500">
       <div className="w-full space-y-5">
         <p className="text-center text-sm text-muted-foreground">
-          Silakan pilih cabang, scan QR, <span className="font-medium text-slate-700">atau</span> masukkan kode manual.
+          Silakan pilih cabang atau scan QR untuk melanjutkan.
         </p>
         <div className="rounded-3xl border border-slate-200/70 bg-white/90 shadow-[0_30px_70px_-60px_rgba(15,23,42,0.6)] overflow-hidden">
           <div className="flex items-center gap-3 px-5 py-4">
@@ -401,64 +385,26 @@ const BranchScanner = ({ onBranchFound }: BranchScannerProps) => {
             >
               Muat Ulang Data Cabang
             </Button>
-          <Button
-            variant="goldSoft"
-            size="lg"
-            className="w-full h-12 rounded-2xl"
-            disabled={!selectedId || loading || branches.length === 0 || isProceedingSelect}
-            onClick={handleDropdown}
-          >
-            {isProceedingSelect ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-600" />
-                Memuat
-              </span>
-            ) : (
-              <>
-                Lanjutkan
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </>
-            )}
-          </Button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200/70 bg-white/90 shadow-[0_30px_70px_-60px_rgba(15,23,42,0.6)] overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <div className="h-10 w-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <QrCode className="h-5 w-5" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Masukkan Kode Manual</h3>
-          </div>
-          <div className="h-px bg-slate-100" />
-          <form onSubmit={handleManual} className="px-5 py-5 space-y-4">
-            <p className="text-sm text-slate-500">Kode cabang ada pada nota atau kartu cabang</p>
-            <Input
-              value={manualCode}
-              onChange={(e) => { setManualCode(e.target.value); setError(""); }}
-              placeholder="Contoh: CABANG-1"
-              className="h-12 rounded-2xl text-center text-base font-mono tracking-widest border-slate-200 bg-white shadow-sm focus-visible:ring-2 focus-visible:ring-amber-200"
-            />
             <Button
-              type="submit"
               variant="goldSoft"
               size="lg"
               className="w-full h-12 rounded-2xl"
-              disabled={!manualCode.trim() || isProceedingManual}
+              disabled={!selectedId || loading || branches.length === 0 || isProceedingSelect}
+              onClick={handleDropdown}
             >
-              {isProceedingManual ? (
+              {isProceedingSelect ? (
                 <span className="inline-flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-600" />
                   Memuat
                 </span>
               ) : (
                 <>
-                  Cari Cabang
+                  Lanjutkan
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </>
               )}
             </Button>
-          </form>
+          </div>
         </div>
 
         {error && (

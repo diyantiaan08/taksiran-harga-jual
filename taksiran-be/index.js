@@ -9,6 +9,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const normalizeDomain = (value) => {
+  if (!value) return '';
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+};
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const storeSchema = new mongoose.Schema({
   domain: { type: String, required: true },
   kode_toko: { type: String, required: true },
@@ -28,36 +35,15 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-app.post('/stores', async (req, res) => {
-  const { domain, kode_toko } = req.body;
-  if (!domain || !kode_toko) return res.status(400).json({ message: 'domain dan kode_toko wajib diisi' });
-  const exists = await Store.findOne({ domain, kode_toko });
-  if (exists) return res.status(400).json({ message: 'Domain dan kode toko sudah terdaftar.' });
-  const store = new Store({ domain, kode_toko });
-  await store.save();
-  res.json(store);
-});
-
 app.get('/stores', async (req, res) => {
-  const stores = await Store.find({}, { _id: 0, __v: 0 });
+  const stores = await Store.find({}, { _id: 0, __v: 0 }).sort({ _id: -1 });
   res.json({ stores });
 });
 
-app.patch('/stores/qr', async (req, res) => {
-  const { kode_toko, qr_link } = req.body || {};
-  if (!kode_toko || !qr_link) {
-    return res.status(400).json({ message: 'kode_toko dan qr_link wajib diisi' });
-  }
-  const updated = await Store.findOneAndUpdate(
-    { kode_toko },
-    { $set: { qr_link } },
-    { new: true, projection: { _id: 0, __v: 0 } }
-  );
-  if (!updated) return res.status(404).json({ message: 'Store tidak ditemukan' });
-  return res.json({ store: updated });
-});
-
 const requireAuth = (req, res, next) => {
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({ message: 'JWT_SECRET belum di-set' });
+  }
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!token) return res.status(401).json({ message: 'Unauthorized' });
@@ -73,7 +59,7 @@ const requireAuth = (req, res, next) => {
 app.post('/auth/login', async (req, res) => {
   const { user_id, password } = req.body || {};
   if (!user_id || !password) {
-    return res.status(400).json({ message: 'user_id dan password wajib diisi' });
+    return res.status(400).json({ message: 'user id dan password wajib diisi' });
   }
   const user = await User.findOne({ user_id });
   if (!user) return res.status(401).json({ message: 'User tidak ditemukan' });
@@ -85,6 +71,62 @@ app.post('/auth/login', async (req, res) => {
 
 app.get('/auth/me', requireAuth, async (req, res) => {
   res.json({ user_id: req.user.user_id });
+});
+
+app.post('/stores', requireAuth, async (req, res) => {
+  const { domain, kode_toko } = req.body || {};
+  if (!domain || !kode_toko) {
+    return res.status(400).json({ message: 'domain dan nama toko wajib diisi' });
+  }
+  const normalizedDomain = normalizeDomain(domain.trim());
+  const kode = kode_toko.trim();
+  const exists = await Store.findOne({ kode_toko: new RegExp(`^${escapeRegex(kode)}$`, 'i') });
+  if (exists) return res.status(400).json({ message: 'Kode toko sudah terdaftar' });
+  const store = new Store({ domain: normalizedDomain, kode_toko: kode });
+  await store.save();
+  return res.json({ store: { domain: store.domain, kode_toko: store.kode_toko, qr_link: store.qr_link } });
+});
+
+app.patch('/stores', requireAuth, async (req, res) => {
+  const { kode_toko, domain, new_kode_toko } = req.body || {};
+  if (!kode_toko || !domain) {
+    return res.status(400).json({ message: 'kode_toko dan domain wajib diisi' });
+  }
+  const normalizedDomain = normalizeDomain(domain.trim());
+  const kode = kode_toko.trim();
+  const store = await Store.findOne({ kode_toko: new RegExp(`^${escapeRegex(kode)}$`, 'i') });
+  if (!store) return res.status(404).json({ message: 'Store tidak ditemukan' });
+  const newKode = new_kode_toko ? new_kode_toko.trim() : kode;
+  if (newKode.toLowerCase() !== store.kode_toko.toLowerCase()) {
+    const exists = await Store.findOne({ kode_toko: new RegExp(`^${escapeRegex(newKode)}$`, 'i') });
+    if (exists) return res.status(400).json({ message: 'Kode toko sudah terdaftar' });
+  }
+  store.domain = normalizedDomain;
+  store.kode_toko = newKode;
+  await store.save();
+  return res.json({ store: { domain: store.domain, kode_toko: store.kode_toko, qr_link: store.qr_link } });
+});
+
+app.delete('/stores/:kode_toko', requireAuth, async (req, res) => {
+  const kode = (req.params.kode_toko || '').trim();
+  if (!kode) return res.status(400).json({ message: 'kode_toko wajib diisi' });
+  const deleted = await Store.findOneAndDelete({ kode_toko: new RegExp(`^${escapeRegex(kode)}$`, 'i') });
+  if (!deleted) return res.status(404).json({ message: 'Store tidak ditemukan' });
+  return res.json({ message: 'Store dihapus' });
+});
+
+app.patch('/stores/qr', requireAuth, async (req, res) => {
+  const { kode_toko, qr_link } = req.body || {};
+  if (!kode_toko || !qr_link) {
+    return res.status(400).json({ message: 'kode_toko dan qr_link wajib diisi' });
+  }
+  const updated = await Store.findOneAndUpdate(
+    { kode_toko: new RegExp(`^${escapeRegex(kode_toko)}$`, 'i') },
+    { $set: { qr_link } },
+    { new: true, projection: { _id: 0, __v: 0 } }
+  );
+  if (!updated) return res.status(404).json({ message: 'Store tidak ditemukan' });
+  return res.json({ store: updated });
 });
 
 app.get('/qr/resolve', async (req, res) => {
