@@ -80,21 +80,21 @@ const AppraisalResult = ({ result, onReset }: AppraisalResultProps) => {
       <div className="w-full space-y-3">
         <div className="flex items-center gap-4 rounded-2xl border border-sky-100/80 bg-gradient-to-br from-sky-50/80 via-white to-white p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
           <div className="w-11 h-11 rounded-2xl bg-white/90 ring-1 ring-black/5 shadow-sm flex items-center justify-center shrink-0">
-            <TrendingDown className="w-5 h-5 text-sky-600" />
+            <TrendingUp className="w-5 h-5 text-sky-600" />
           </div>
           <div className="flex-1">
-            <p className="text-xs text-muted-foreground">Harga Minimum</p>
-            <p className="font-bold text-foreground">{formatRupiah(result.minPrice)}</p>
+            <p className="text-xs text-muted-foreground">Harga Maksimum</p>
+            <p className="font-bold text-foreground">{formatRupiah(result.maxPrice)}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#d9921b] via-[#c77e10] to-[#b56b0a] p-4 shadow-[0_20px_44px_-26px_rgba(180,95,10,0.65)]">
           <div className="w-11 h-11 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-5 h-5 text-white" />
+            <TrendingDown className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-xs text-white/80 drop-shadow-sm">Harga Maksimum</p>
-            <p className="font-bold text-white text-lg drop-shadow-sm">{formatRupiah(result.maxPrice)}</p>
+            <p className="text-xs text-white/80 drop-shadow-sm">Harga Minimum</p>
+            <p className="font-bold text-white text-lg drop-shadow-sm">{formatRupiah(result.minPrice)}</p>
           </div>
         </div>
 
