@@ -186,7 +186,6 @@ const Index = () => {
 
         <div className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-[#fbfcff] via-[#f2f7ff] to-[#e8efff] text-slate-800 lg:h-screen lg:min-h-0 lg:overflow-y-auto">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-32 -right-28 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_top,_rgba(250,232,180,0.9),_rgba(250,232,180,0))] blur-3xl" />
             <div className="absolute bottom-[-140px] left-[-80px] h-96 w-96 rounded-full bg-[radial-gradient(circle_at_top,_rgba(191,219,254,0.9),_rgba(191,219,254,0))] blur-3xl" />
             <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.5),rgba(255,255,255,0)_45%,rgba(255,255,255,0.35))] opacity-70" />
           </div>
@@ -287,8 +286,8 @@ const Index = () => {
 
             {/* Content */}
             <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pb-8">
-              <div className="w-full rounded-[30px] bg-gradient-to-br from-white via-white/70 to-amber-100/60 p-[1px] shadow-[0_40px_90px_-60px_rgba(15,23,42,0.7)]">
-                <div className="rounded-[28px] border border-white/70 bg-white/90 p-6 ring-1 ring-white/60 backdrop-blur-md">
+              <div className="w-full rounded-[30px] bg-white/90 p-[1px] shadow-[0_40px_90px_-60px_rgba(15,23,42,0.7)] ring-1 ring-slate-200/70">
+                <div className="rounded-[28px] border border-white/70 bg-white/95 p-6 backdrop-blur-md">
                 {step === 1 && <BranchScanner onBranchFound={handleBranchFound} />}
                 {step === 2 && (
                   <div className="space-y-4">
