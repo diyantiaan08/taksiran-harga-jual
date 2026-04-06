@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, ArrowLeft, Store } from "lucide-react";
+import { MapPin, ArrowLeft, Store, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import StepIndicator from "@/components/StepIndicator";
 import BranchScanner from "@/components/BranchScanner";
 import BarcodeInput from "@/components/BarcodeInput";
@@ -14,7 +26,7 @@ import type { BranchInfo, GoldItem, QuestionnaireAnswer, AppraisalResult } from 
 const STEP_LABELS = ["Cabang", "Kode Nota", "Detail", "Kondisi", "Taksiran"];
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const presetBranch = searchParams.get("branch");
 
   const [step, setStep] = useState(presetBranch ? 2 : 1);
@@ -33,6 +45,11 @@ const Index = () => {
     setStep(2);
   };
 
+  const normalizeDomain = (value?: string) => {
+    if (!value) return "";
+    return value.endsWith("/") ? value.slice(0, -1) : value;
+  };
+
   const handleBarcode = async (barcode: string) => {
     setError("");
     setItem(null);
@@ -40,15 +57,17 @@ const Index = () => {
     setMaxPrice(null);
     setIsFetchingBarcode(true);
     try {
+      if (!branch?.domain) throw new Error("Domain cabang tidak tersedia.");
+      const apiBase = normalizeDomain(branch.domain);
       // 1. Fetch barang by barcode
       if (!TOKEN_PUSAT) throw new Error("Token pusat belum di-set di env (VITE_TOKEN_PUSAT)");
       const res = await fetch(
-        `https://italy.goldstore.id/api/v1/pembelian/get/jual/${barcode}`,
+        `${apiBase}/api/v1/pembelian/get/jual/${barcode}`,
         {
           headers: { "X-Auth-Token": TOKEN_PUSAT },
         }
       );
-      if (!res.ok) throw new Error("Gagal mengambil data barang");
+      if (!res.ok) throw new Error("Data tidak ditemukan");
       const data = await res.json();
       if (!Array.isArray(data) || !data[0]) {
         setError("Kode barcode tidak ditemukan. Silakan coba lagi.");
@@ -64,12 +83,9 @@ const Index = () => {
       });
 
       // 2. Fetch potongan kondisi
-      const resPot = await fetch(
-        "https://italy.goldstore.id/api/v1/parabeli/get/all",
-        {
-          headers: { "X-Auth-Token": TOKEN_PUSAT },
-        }
-      );
+      const resPot = await fetch(`${apiBase}/api/v1/parabeli/get/all`, {
+        headers: { "X-Auth-Token": TOKEN_PUSAT },
+      });
       if (!resPot.ok) throw new Error("Gagal mengambil data potongan kondisi");
       const potArr = await resPot.json();
       if (!Array.isArray(potArr) || potArr.length === 0) {
@@ -139,6 +155,18 @@ const Index = () => {
     setItem(null);
     setResult(null);
     setError("");
+    setMinPrice(null);
+    setMaxPrice(null);
+    setSearchParams({}, { replace: true });
+  };
+
+  const handleNewAppraisal = () => {
+    setStep(2);
+    setItem(null);
+    setResult(null);
+    setError("");
+    setMinPrice(null);
+    setMaxPrice(null);
   };
 
   return (
@@ -212,15 +240,45 @@ const Index = () => {
             {/* Step Indicator + Back */}
             <div className="mx-auto w-full max-w-lg space-y-3 px-4 py-5">
               {step > 1 && step < 5 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="-ml-2 text-slate-600 hover:text-slate-800"
-                  onClick={() => setStep(step - 1)}
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Kembali
-                </Button>
+                <div className="flex items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-2 text-slate-600 hover:text-slate-800"
+                    onClick={() => setStep(step - 1)}
+                  >
+                    <ArrowLeft className="mr-1 h-4 w-4" />
+                    Kembali
+                  </Button>
+                  <AlertDialog>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9 rounded-full border-slate-200 bg-white/70 text-slate-700 hover:bg-white"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset &amp; Ganti Cabang</TooltipContent>
+                    </Tooltip>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset Data?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Semua data yang sudah diinput akan dihapus dan kembali ke step awal.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               )}
               <div className="rounded-3xl bg-white/85 p-4 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.6)] ring-1 ring-white/70 backdrop-blur-sm">
                 <StepIndicator currentStep={step} totalSteps={5} labels={STEP_LABELS} />
@@ -249,7 +307,7 @@ const Index = () => {
                   />
                 )}
                 {step === 4 && <Questionnaire questions={QUESTIONNAIRE} onSubmit={handleQuestionnaire} />}
-                {step === 5 && result && <AppraisalResultView result={result} onReset={handleReset} />}
+              {step === 5 && result && <AppraisalResultView result={result} onReset={handleNewAppraisal} />}
                 </div>
               </div>
             </main>
